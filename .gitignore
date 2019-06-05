@@ -1,4 +1,5 @@
 *.file
+log/
 # Prerequisites
 *.d
 
