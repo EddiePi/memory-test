@@ -14,12 +14,12 @@
 #define M 1024*1024
 //default is 8
 //number of threads
-#define N 30
+#define N 2
 
 
 using namespace std;
 
-int S = 400;
+int S = 100;
 
 void allocate(int tid, char** p) {
 
@@ -58,6 +58,8 @@ void do_access (int tid, char** p) {
 
 void _memory_(int index) {
 
+    int pid = getpid();
+    std::cout << "child pid: " << pid << endl;
 	//sieze of 1K pointer
 	char *p[S];
 	allocate(index,p);

@@ -28,12 +28,13 @@ int mmap_sys(size_t length, struct mmap_node *head)
 	struct timeval end;
 
 	gettimeofday(&start, NULL);
-	void* space = mmap (NULL, length*sizeof(char), 
-				PROT_READ | PROT_WRITE, 
-				MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, 
-				-1, 0);
+	//void* space = mmap (NULL, length*sizeof(char), 
+	//			PROT_READ | PROT_WRITE, 
+	//			MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, 
+	//			-1, 0);
+    void* space = malloc(length);
 	gettimeofday(&end, NULL);
-	if (space == MAP_FAILED)
+	if (space == NULL)
 	{
 		printf("mmap_sys failed\n");
 		return -1;
@@ -66,7 +67,7 @@ struct mmap_node* mmap_buf(size_t length, struct mmap_node *head, int populate)
 
 		// direct alloc
 		int mask = 0;
-		printf("poll is empty, get memory from mmap ");
+		printf("poll is empty, get memory from mmap\n");
 		if (populate)
 		{
 			mask |= MAP_POPULATE;
@@ -76,11 +77,13 @@ struct mmap_node* mmap_buf(size_t length, struct mmap_node *head, int populate)
 		{
 			printf("not populate\n");
 		}
-		void* space = mmap (NULL, length*sizeof(char), 
-                                PROT_READ | PROT_WRITE, 
-                                MAP_PRIVATE | MAP_ANONYMOUS | mask, 
-                                -1, 0);
-		if (space == MAP_FAILED)
+		//void* space = mmap (NULL, length*sizeof(char), 
+        //                       PROT_READ | PROT_WRITE, 
+        //                        MAP_PRIVATE | MAP_ANONYMOUS | mask, 
+        //                       -1, 0);
+        
+        void* space = malloc(length);
+		if (space == NULL)
 		{
 			printf("mmap failed\n");
 		}
@@ -95,10 +98,11 @@ struct mmap_node* mmap_buf(size_t length, struct mmap_node *head, int populate)
 	to_go->next->prev = to_go->prev;
 	if (to_go->length != length)
 	{
-		void *new_addr = mremap(to_go->addr, 
-				to_go->length, 
-				length, MREMAP_MAYMOVE);
-		if (new_addr == MAP_FAILED)
+		//void *new_addr = mremap(to_go->addr, 
+		//		to_go->length, 
+		//		length, MREMAP_MAYMOVE);
+        void* new_addr = realloc(to_go->addr, length);
+		if (new_addr == NULL)
 		{
 			printf("remap failed\n");
 			return new_addr;
@@ -167,7 +171,7 @@ int main(int argv, char **argc)
 	{
 		SIZE *= atoi(argc[1]);
 	}
-	printf("press enter to start mmap sys");
+	printf("press enter to start mmap sys\n");
 	/*struct mmap_node head = {
 		.addr = NULL,
 		.length = 0,
@@ -179,7 +183,7 @@ int main(int argv, char **argc)
 	head->prev = head;
 	char dummy;
 	dummy = getchar();
-	fill_poll(SIZE, head, prepared_num);
+	//fill_poll(SIZE, head, prepared_num);
 	
 	//gettimeofday(&start, NULL);
 	// try to get memory from the poll
@@ -211,11 +215,11 @@ int main(int argv, char **argc)
 			gettimeofday(&start, NULL);
 			struct mmap_node *chunk = mmap_buf(new_size, head, populate);
 			gettimeofday(&end, NULL);
-			printf("got mmap memory, addr %ld\n", (unsigned long)chunk->addr);
-			printf("execution time %ld us\n ", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
+			printf("got malloc memory, addr %ld\n", (unsigned long)chunk->addr);
+			printf("execution time %ld us\n", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
 
 			// fill the memory
-			printf("press enter to fill the memory");
+			printf("press enter to fill the memory\n");
 			while((dummy = getchar()) != EOF && dummy != '\n');
 			dummy = getchar();
 			gettimeofday(&start, NULL);
@@ -224,18 +228,14 @@ int main(int argv, char **argc)
 			printf("fill time %ld us\n", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
 			
 			// release the memory
-			printf("press enter to release the memory");
+			printf("press enter to release the memory\n");
 			//while((dummy = getchar()) != EOF && dummy != '\n');
 			dummy = getchar();
 			int errno;
-			if (chunk->addr != MAP_FAILED)
+			if (chunk->addr != NULL)
 			{
-				errno = munmap(chunk->addr, chunk->length);
+				free(chunk->addr);
 				free(chunk);
-				if (errno != 0)
-				{
-					printf("unmap failed\n");
-				}
 			}
 		}
 		else if (strcmp(cmd, "2") == 0)

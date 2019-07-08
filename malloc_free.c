@@ -5,7 +5,6 @@
 #include <sys/time.h>
 #include<stdio.h>
 
-int SLEEP_TIME_IN_SEC = 1;
 unsigned int parse_memory_size(char *m);
 
 struct mem_block
@@ -18,19 +17,12 @@ int main (int argc, char *argv[])
 	printf("PID: %d\n", (int) getpid());
 	if (argc < 2)
 	{
-		printf ("please specify the amout of memory you want to allocate");
+		printf ("please specify the amout of memory (MB) you want to allocate");
 		return 0;
 	}
 
 	unsigned int memory_to_alloc_in_mb = atoi(argv[1]);
 	
-	if (argc < 3)
-	{
-		printf("using default sleep time 1sec\n");
-	} else {
-		SLEEP_TIME_IN_SEC = atoi(argv[2]);
-	}
-
 	// count the number of blocks in MB unit
 	int numOfBlock = memory_to_alloc_in_mb;
 
@@ -39,7 +31,10 @@ int main (int argc, char *argv[])
 	struct timeval start, alloc_end, end;
 	unsigned long alloc_timer, timer;
 	while(1)
-	{
+	{	
+		char dummy;
+		printf("press enter to start allocation.\n");
+		dummy = getchar();
 		gettimeofday(&start, NULL);
 		// allocate the memory
 		for (int i = 0; i < numOfBlock; i++)
@@ -52,7 +47,8 @@ int main (int argc, char *argv[])
 			blocks[i] = block;
 		}
 		gettimeofday(&alloc_end, NULL);
-		
+		printf("press enter to free the memory\n");
+		dummy = getchar();
 
 		// free the memory
 		for (int i = 0; i < numOfBlock; i++)
@@ -63,17 +59,18 @@ int main (int argc, char *argv[])
 		alloc_timer = 1000000 * (alloc_end.tv_sec - start.tv_sec) + alloc_end.tv_usec - start.tv_usec;
 		timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
 		printf("one alloc-free round end. alloc time %ld us. total time %ld us\n", alloc_timer, timer);
-		sleep(SLEEP_TIME_IN_SEC);
-	}
-
-	while(1)
-	{
-		char exit;
-		printf("exit? y/n\n");
-		scanf("%c", &exit);
-		if (exit == 'y' || exit == 'Y')
+		while(1)
 		{
-			return 0;
+			char exit;
+			printf("exit? 'y', alloc again? 'a'\n");
+			scanf("%c", &exit);
+			if (exit == 'y' || exit == 'Y')
+			{
+				return 0;
+			} else if (exit == 'a' || exit == 'A')
+			{
+				break;
+			}
 		}
 	}
 }
