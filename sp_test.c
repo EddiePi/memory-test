@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <time.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -139,6 +140,158 @@ void fill_chunk(void* addr, unsigned long length)
 }
 
 
+void alloc_small()
+{
+  FILE *ofile;
+  ofile = fopen("/home/eddie/memory-test/data/data.txt", "w");
+  int base = 1024;
+  size_t size = 1;
+  int count = 10000;
+  void **buf;
+  char dummy;
+  long wait = 0;
+  struct timeval start;
+  struct timeval end;
+  struct timeval r_start;
+  struct timeval r_end;
+  struct timespec start_ns;
+  struct timespec end_ns;
+  printf("specify chunk size in KB\n");
+  scanf("%ld", &size);
+  size *= 1024;
+  printf("specify # of chunks, default 10000\n");
+  scanf("%d", &count);
+  buf = (void **) malloc(sizeof(void *) * count);
+  printf("press enter to alloc memory\n");
+	while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+
+  gettimeofday(&start, NULL);
+  for(int i = 0; i < count; i++)
+  {
+    //gettimeofday(&r_start, NULL);
+    clock_gettime(CLOCK_REALTIME, &start_ns);
+    buf[i] = malloc(size);
+    char *c = (char *) buf[i];
+    for (int j = 0; j < size; j++)
+    {
+      c[j] = 'a';
+    }
+    clock_gettime(CLOCK_REALTIME, &end_ns);
+    //gettimeofday(&r_end, NULL);
+    //fprintf(ofile, "%ld\n", (r_end.tv_sec - r_start.tv_sec) * 1000000 + (r_end.tv_usec - r_start.tv_usec));
+    fprintf(ofile, "%ld\n", (end_ns.tv_sec - start_ns.tv_sec) * 1000000000 + (end_ns.tv_nsec - start_ns.tv_nsec));
+    if (i % 1000 == 0)
+    {
+      wait += 100;
+      usleep(100);
+    }
+
+  }
+  /*
+  gettimeofday(&end, NULL);
+  printf("alloc time: %ld us\n", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
+  printf("press enter to fill memory\n");
+	//while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+  gettimeofday(&start, NULL);
+  for(int i = 0; i < count; i++)
+  {
+    char *c = (char *)buf[i];
+    for (int j = 0; j < size; j++)
+    {
+      c[j] = 'a';
+    }
+  }
+  */
+  gettimeofday(&end, NULL);
+  printf("fill time: %ld us\n", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec) - wait);
+  printf("press enter to release memory\n");
+	//while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+  for (int i = 0; i < count; i++)
+  {
+    free(buf[i]);
+  }
+  fclose(ofile);
+}
+
+void alloc_large()
+{
+  FILE *ofile;
+  ofile = fopen("/home/eddie/memory-test/data/data.txt", "w");
+  int base = 1024;
+  size_t size = 1;
+  int count = 10000;
+  void **buf;
+  char dummy;
+  long wait = 0;
+  struct timeval start;
+  struct timeval end;
+  struct timeval r_start;
+  struct timeval r_end;
+  printf("specify chunk size in KB (minimum 128 K)\n");
+  scanf("%ld", &size);
+  if (size < 128)
+  {
+    size = 128;
+  }
+  size *= 1024;
+  printf("specify # of chunks, default 10000\n");
+  scanf("%d", &count);
+  buf = (void **) malloc(sizeof(void *) * count);
+  printf("press enter to alloc memory\n");
+	while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+
+  long total = 0;
+  long each = 0;
+  gettimeofday(&start, NULL);
+  for(int i = 0; i < count; i++)
+  {
+    gettimeofday(&r_start, NULL);
+    buf[i] = malloc(size);
+    char *c = (char *) buf[i];
+    for (int j = 0; j < size; j++)
+    {
+      c[j] = 'a';
+    }
+    gettimeofday(&r_end, NULL);
+    each = (r_end.tv_sec - r_start.tv_sec) * 1000000 + (r_end.tv_usec - r_start.tv_usec);
+    fprintf(ofile, "%ld\n", each);
+    total += each;
+    usleep(2000);
+  }
+  fflush(ofile);
+  /*
+  gettimeofday(&end, NULL);
+  printf("alloc time: %ld us\n", (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
+  printf("press enter to fill memory\n");
+	//while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+  gettimeofday(&start, NULL);
+  for(int i = 0; i < count; i++)
+  {
+    char *c = (char *)buf[i];
+    for (int j = 0; j < size; j++)
+    {
+      c[j] = 'a';
+    }
+  }
+  */
+  gettimeofday(&end, NULL);
+  printf("fill time: %ld us\n", total);
+  printf("press enter to release memory\n");
+	//while((dummy = getchar()) != EOF && dummy != '\n');
+  getchar();
+  for (int i = 0; i < count; i++)
+  {
+    free(buf[i]);
+  }
+  fclose(ofile);
+}
+
+
 void show_all_mmap(struct mmap_node *head)
 {
 	struct mmap_node *cur = head->next;
@@ -156,6 +309,8 @@ void show_menu()
 	printf("2: refill poll\n");
 	printf("3: exit\n");
 	printf("4: show all mmap\n");
+  printf("5: allocate small chunk of memory\n");
+  printf("6: allocate large chunk of memory\n");
 }
 
 
@@ -192,7 +347,7 @@ int main(int argv, char **argc)
 	{
 		char s[10];
 		int new_size;
-		int base = 1024 * 1024;
+		int base = 1024;
 		printf("type command\n");
 		scanf("%s", cmd);
 		if (strcmp(cmd, "1") == 0)
@@ -261,6 +416,14 @@ int main(int argv, char **argc)
 		{
 			show_all_mmap(head);
 		}
+    else if (strcmp(cmd, "5") == 0)
+    {
+      alloc_small();
+    }
+    else if (strcmp(cmd, "6") == 0)
+    {
+      alloc_large();
+    }
 		else {
 			show_menu();
 		}

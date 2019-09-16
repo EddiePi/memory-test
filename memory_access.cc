@@ -14,12 +14,12 @@
 #define M 1024*1024
 //default is 8
 //number of threads
-#define N 2
+#define N 24
 
 
 using namespace std;
 
-int S = 100;
+int S = 600;
 
 void allocate(int tid, char** p) {
 
@@ -47,12 +47,19 @@ void do_access (int tid, char** p) {
 		for(int i = 0; i < S; i++){
    			for(int n = 0; n < M; n++) {
 				p[(i + start_index) % S][n]='b';
+        usleep(10);
 			}
 		}
-	usleep(10000);
+	usleep(100000);
 	//sleep(1);
+  //break;
 	loop++;
 	}
+  
+  while (1)
+  {
+    sleep(1);
+  }
 
 }
 

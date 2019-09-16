@@ -1,5 +1,6 @@
 *.file
 logs/
+data/
 # Prerequisites
 *.d
 
